@@ -35,9 +35,10 @@ regd_users.post("/login", (req, res) => {
     return;
   }
 
+  req.session.authorization = jwt.sign({ user: user }, "access");
+
   return res.status(200).send({
     message: "User has successfully logged in",
-    token: jwt.sign({ user: user }, "access"),
   });
 });
 
