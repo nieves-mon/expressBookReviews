@@ -81,7 +81,7 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     }
   }
 
-  const newId = (book.reviews.length || 0) + 1;
+  const newId = (Object.keys(book.reviews).length || 0) + 1;
 
   book.reviews[newId] = {
     text,
@@ -90,6 +90,43 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
 
   return res.status(200).send({
     message: `Review for book with ISBN ${isbn} has been created`,
+  });
+});
+
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+  const token = req.session.authorization;
+
+  const verified = jwt.verify(token, "access");
+
+  if (!verified?.user) {
+    res.status(400).send({ message: "Forbidden" });
+    return;
+  }
+
+  const isbn = req.params.isbn;
+  if (!isbn?.length) {
+    res.status(400).send({ message: "ISBN is required" });
+    return;
+  }
+
+  const book = books[isbn];
+  if (!book) {
+    res.status(404).send({ message: "Book not found" });
+    return;
+  }
+
+  const filtered_reviews = {};
+  let currId = 1;
+  for (const review of Object.values(book.reviews)) {
+    if (review.username !== verified.user.username) {
+      filtered_reviews[currId] = review;
+    }
+  }
+
+  book.reviews = filtered_reviews;
+
+  return res.status(200).send({
+    message: `Reviews made by user for book with ISBN ${isbn} have been successfully deleted`,
   });
 });
 
